@@ -1,0 +1,47 @@
+---
+# tasks for clamscan
+- name: Install clamav from the epel repository
+  ansible.builtin.dnf:
+    name: clamav
+    state: present
+
+- name: Set av definition database directory
+  ansible.builtin.lineinfile:
+    path: /etc/clamd.d/scan.conf
+    regexp: '^#DatabaseDirectory'
+    line: "{{ db_dir }}"
+
+- name: Create local report directory
+  ansible.builtin.file:
+    path: /usr/local/clamav/quarantine
+    state: directory
+    owner: root
+    group: "{{ auditors }}"
+    mode: '0650'
+
+- name: Create local quarantine directory
+  ansible.builtin.file:
+    path: /usr/local/clamav/quarantine
+    state: directory
+    owner: root
+    group: "{{ auditors }}"
+    mode: '0650'
+
+- name: name: Copy clamscan.sh script to remote host
+  ansible.builtin.copy:
+    src: ./roles/clamscan/files/clamscan.sh
+    dest: /bin/clamscan.sh
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: create cronjob for weekly scan
+  ansible.builtin.cron:
+    name: clamscan
+    weekday: "6"
+    minute: "0"
+    hour: "5"
+    user: root
+    job: "/bin/clamscan.sh"
+    cron_file: clamscan
+

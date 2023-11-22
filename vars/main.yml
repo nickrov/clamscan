@@ -1,0 +1,3 @@
+---
+db_dir: //path/to/remote/share/containing/up-to-date/defs
+auditors: lab issos
