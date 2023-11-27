@@ -1,7 +1,7 @@
 Clamscan Role
 =========
 
-Quick deployment clamav
+Quick deploy clamav
 
 Requirements
 ------------
