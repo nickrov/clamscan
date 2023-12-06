@@ -11,9 +11,30 @@
     regexp: '^#DatabaseDirectory'
     line: "{{ db_dir }}"
 
+- name: Get current selinux label on /usr/local/clamav
+  ansible.builtin.command: ls -laZ /usr/local/clamav
+  register: clam_label
+  tags:
+    - selinux
+
+- name: Debug out
+  ansible.builtin.debug:
+    var: clam_label.stdout
+  tags:
+    - selinux
+
+- name: Set appropiate SELinux file context on /usr/local/clamav
+  community.general.sefcontext:
+    target: "/usr/local/clamav(/.*)?"
+    setype: antivirus_db_t
+    state: present
+  when: "'antivirus_db_t' not in clam_label.stdout"
+  tags:
+    - selinux
+
 - name: Create local report directory
   ansible.builtin.file:
-    path: /usr/local/clamav/quarantine
+    path: /usr/local/clamav/reports
     state: directory
     owner: root
     group: "{{ auditors }}"
@@ -27,13 +48,15 @@
     group: "{{ auditors }}"
     mode: '0650'
 
-- name: name: Copy clamscan.sh script to remote host
-  ansible.builtin.copy:
-    src: ./roles/clamscan/files/clamscan.sh
+- name: Copy clamscan.sh script to remote host
+  ansible.builtin.template:
+    src: ./roles/clamscan/templates/clamscan.j2
     dest: /bin/clamscan.sh
     owner: root
     group: root
     mode: '0700'
+  tags:
+    - template
 
 - name: create cronjob for weekly scan
   ansible.builtin.cron:
